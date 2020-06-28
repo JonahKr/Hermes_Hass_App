@@ -1,6 +1,7 @@
 import asyncio
 import websockets
 import json
+from typing import Union
 
 class ParameterError(Exception):
     pass
@@ -246,8 +247,19 @@ class hass_websocket_client:
     """
     From Here on we have custom Functions apart from the standard Set to enable access to additional Data
     """
-
     #AREAS
     async def fetch_areas(self) -> (bool, list):
         response  = await self.__send("config/area_registry/list")
         return (response['success'], response['result'] if 'result' in response.keys() else [])
+    
+    async def delete_area(self, area_id) -> (bool, Union[str,dict]):
+        response = await self. __send("config/area_registry/delete", area_id = area_id)
+        return (response['success'], response['result'] if 'result' in response.keys() else {'error':response['error']})
+    
+    async def update_area(self, area_id, name) -> bool:
+        response = await self.__send("config/area_registry/update", area_id = area_id, name = name)
+        return response['success']
+    
+    async def create_area(self, name) -> (bool, dict):
+        response = await self.__send("config/area_registry/create", name = name)
+        return (response['success'], response['result'] if 'result' in response.keys() else {'error':response['error']})
