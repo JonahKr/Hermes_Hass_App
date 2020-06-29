@@ -247,19 +247,29 @@ class hass_websocket_client:
     """
     From Here on we have custom Functions apart from the standard Set to enable access to additional Data
     """
-    #AREAS
+    #Areas
     async def fetch_areas(self) -> (bool, list):
         response  = await self.__send("config/area_registry/list")
         return (response['success'], response['result'] if 'result' in response.keys() else [])
     
-    async def delete_area(self, area_id) -> (bool, Union[str,dict]):
+    async def delete_area(self, area_id:str) -> (bool, Union[str,dict]):
         response = await self. __send("config/area_registry/delete", area_id = area_id)
         return (response['success'], response['result'] if 'result' in response.keys() else {'error':response['error']})
     
-    async def update_area(self, area_id, name) -> bool:
+    async def update_area(self, area_id:str, name:str) -> bool:
         response = await self.__send("config/area_registry/update", area_id = area_id, name = name)
         return response['success']
     
-    async def create_area(self, name) -> (bool, dict):
+    async def create_area(self, name:str) -> (bool, dict):
         response = await self.__send("config/area_registry/create", name = name)
         return (response['success'], response['result'] if 'result' in response.keys() else {'error':response['error']})
+    
+    #Zones
+    async def fetch_zones(self) -> (bool,list):
+        response = await self.__send("zone/list")
+        return (response['success'], response['result'] if 'result' in response.keys() else [])
+
+    #Manifest
+    async def fetch_manifest(self) -> (bool,list):
+        response = await self.__send("manifest/list")
+        return (response['success'], response['result'] if 'result' in response.keys() else [])
