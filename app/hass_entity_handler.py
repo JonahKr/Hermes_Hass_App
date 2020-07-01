@@ -1,32 +1,20 @@
 import asyncio
 from hass_websocket_client import hass_websocket_client
 
-class aobject(object):
-    async def __new__(cls, *a, **kw):
-        instance = super().__new__(cls)
-        await instance.__init__(*a, **kw)
-        return instance
-
-    async def __init__(self):
-        pass
-
-class hass_entity_handler(aobject):
-    async def __init__(self, ws):
+class hass_entity_handler():
+    def __init__(self, ws:hass_websocket_client):
         self.ws = ws
-        self.domains = await self.__fetch_domains()
     
-    async def __fetch_domains(self) -> list:
-        domains = []
-        tracer, manifest = await self.ws.fetch_manifest()
-        if tracer:
-            for entry in manifest:
-                domains.append(entry['domain'])
-            return domains
-        else:
-            return []
-        self.domains = domains
+    async def update_external_data(self):
+        tracer, domains = await self.ws.fetch_domains()
+        self.domains = domains if tracer else []
+        tracer, entity_ids = await self.ws.fetch_entity_ids()
+        self.entity_ids = entity_ids if tracer else []
 
-    async def handle_entity_id(self, word:str, room:str = "$ALL", user:str = "$ALL"):
+    async def _approve_entity_id(self, entity_id) -> bool:
+        return True if entity_id in self.entity_ids else False
+
+    async def handle_entity_id(self, word:str, room:str = "$ALL", user:str = "$ALL")->(bool,str,):
         """Checks if the passed string is a valid entity_id and tries to convert it.
         Parameters
         ----------
@@ -48,4 +36,9 @@ class hass_entity_handler(aobject):
         # 2.2 - Use domain: $ALL synonyms
 
         #Option 1: Valid Entity_id
-        pass
+        try:
+            domain = word.split(".")[0]
+            if domain in self.domains and self._approve_entity_id(word):
+                return (True, word)
+        except:
+            pass

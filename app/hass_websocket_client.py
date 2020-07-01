@@ -279,9 +279,25 @@ class hass_websocket_client:
         return (response['success'], response['result'] if 'result' in response.keys() else {'error':response['error']})
     
     #Entities
-    async def fetch_entities(self) -> (bool, list):
+    async def fetch_entity_registry(self) -> (bool, list):
         response = await self.__send("config/entity_registry/list")
         return self.__list_return(response)
+    
+    async def fetch_entity_ids(self) -> (bool,list):
+        """Helper for entity_id fetching
+        Returns
+        -------
+        bool
+            if the fetch was successfull
+        list
+            containing the entity Ids
+        """
+        tracer, response = await self.fetch_entity_registry()
+        entity_list = []
+        if tracer:
+            for entry in response:
+                entity_list.append(entry['entity_id'])
+        return tracer, entity_list if tracer else response
 
     #Zones
     async def fetch_zones(self) -> (bool,list):
@@ -292,3 +308,19 @@ class hass_websocket_client:
     async def fetch_manifest(self) -> (bool,list):
         response = await self.__send("manifest/list")
         return self.__list_return(response)
+    
+    async def fetch_domains(self) -> (bool,list):
+        """Helper for entity_id fetching
+        Returns
+        -------
+        bool
+            if the fetch was successfull
+        list
+            containing the entity Ids
+        """
+        tracer, response = await self.fetch_manifest()
+        domains = []
+        if tracer:
+            for entry in response:
+                domains.append(entry['domain'])
+        return tracer, domains if tracer else response
