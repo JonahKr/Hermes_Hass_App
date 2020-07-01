@@ -10,7 +10,7 @@ class IdMissmatchError(Exception):
     pass
 
 #TODO Secure websocket client
-#TODO Version restrictions from HomeAssistant (for example the Camera stuff is getting deprecated)
+#TODO Version restrictions from HomeAssistant
 class hass_websocket_client:
     """
     A class used to handle interactions with a homeassistant instance using Websocket
@@ -154,6 +154,32 @@ class hass_websocket_client:
         except:
             print("An exception occurred")
 
+    def __list_return(self, response) -> (bool,list):
+        """This generalizes the return Statement to (bool, list)
+        Parameters
+        ----------
+        response : dict
+            the response from the Home assistant API
+        Returns
+        -------
+        (bool,list)
+            A Bool indicating if the request was successfull with the List containing either data or error
+        """
+        return (response['success'], response['result'] if 'result' in response.keys() else ['error',response['error']])
+
+    def __dict_return(self, response) -> (bool,dict):
+        """This generalizes the return Statement to (bool, dict)
+        Parameters
+        ----------
+        response : dict
+            the response from the Home assistant API
+        Returns
+        -------
+        (bool,dict)
+            A Bool indicating if the request was successfull with the Dictionary containing either data or the error
+        """
+        return (response['success'], response['result'] if 'result' in response.keys() else {'error':response['error']})
+
     async def call_service(self, domain: str, service: str, service_data = None) -> bool:
         """
         Parameters
@@ -182,7 +208,7 @@ class hass_websocket_client:
             containing the responses
         """
         response  = await self.__send("get_states")
-        return (response['success'], response['result'] if 'result' in response.keys() else [])
+        return self.__list_return(response)
     
     async def fetch_config(self) -> (bool, dict):
         """This will get a dump of the current config in Home Assistant.
@@ -194,7 +220,7 @@ class hass_websocket_client:
             containing the config
         """
         response  = await self.__send("get_config")
-        return (response['success'], response['result'] if 'result' in response.keys() else [])
+        return self.__dict_return(response)
     
     async def fetch_services(self) -> (bool, dict):
         """This will get a dump of the current services in Home Assistant.
@@ -206,7 +232,7 @@ class hass_websocket_client:
             all services
         """
         response  = await self.__send("get_services")
-        return (response['success'], response['result'] if 'result' in response.keys() else {})
+        return self.__dict_return(response)
     
     async def fetch_panels(self) -> (bool, list):
         """This will get a dump of the current registered panels in Home Assistant.
@@ -218,19 +244,7 @@ class hass_websocket_client:
             containing the panels
         """
         response  = await self.__send("get_panels")
-        return (response['success'], response['result'] if 'result' in response.keys() else [])
-    
-    async def fetch_camera_thumbnail(self, entity_id: str) -> (bool, dict):
-        """Return a b64 encoded thumbnail of a camera entity.
-        Returns
-        -------
-        bool
-            if the request was successfull
-        dict
-            containing the response {"content_type": "image/jpeg", "content" : "<base64 encoded image>"}
-        """
-        response  = await self.__send("camera_thumbnail", entity_id = entity_id)
-        return (response['success'], response['result'] if 'result' in response.keys() else {})
+        return self.__list_return(response)
     
     async def fetch_media_player_thumbnail(self, entity_id: str) -> (bool, dict):
         """Return a b64 encoded thumbnail of a camera entity.
@@ -242,7 +256,7 @@ class hass_websocket_client:
             containing the response {"content_type": "image/jpeg", "content" : "<base64 encoded image>"}
         """
         response  = await self.__send("media_player_thumbnail", entity_id = entity_id)
-        return (response['success'], response['result'] if 'result' in response.keys() else {})
+        return self.__dict_return(response)
     
     """
     From Here on we have custom Functions apart from the standard Set to enable access to additional Data
@@ -250,7 +264,7 @@ class hass_websocket_client:
     #Areas
     async def fetch_areas(self) -> (bool, list):
         response  = await self.__send("config/area_registry/list")
-        return (response['success'], response['result'] if 'result' in response.keys() else [])
+        return self.__list_return(response)
     
     async def delete_area(self, area_id:str) -> (bool, Union[str,dict]):
         response = await self. __send("config/area_registry/delete", area_id = area_id)
@@ -264,12 +278,17 @@ class hass_websocket_client:
         response = await self.__send("config/area_registry/create", name = name)
         return (response['success'], response['result'] if 'result' in response.keys() else {'error':response['error']})
     
+    #Entities
+    async def fetch_entities(self) -> (bool, list):
+        response = await self.__send("config/entity_registry/list")
+        return self.__list_return(response)
+
     #Zones
     async def fetch_zones(self) -> (bool,list):
         response = await self.__send("zone/list")
-        return (response['success'], response['result'] if 'result' in response.keys() else [])
+        return self.__list_return(response)
 
     #Manifest
     async def fetch_manifest(self) -> (bool,list):
         response = await self.__send("manifest/list")
-        return (response['success'], response['result'] if 'result' in response.keys() else [])
+        return self.__list_return(response)
