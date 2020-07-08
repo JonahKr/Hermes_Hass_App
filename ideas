@@ -1,0 +1,45 @@
+- General intent for turning on / off every and all devices and for specific rooms
+    This includes switch and light entities
+
+- Automatically fetch entities for each type
+
+- Match entities with call names and synonyms...
+
+- Consider location off satelite. ( is there an implementation already?)
+
+- If feature arises "userdetection" with extra mapping for a "my" attribute (e.g. my desklamp, my heater)
+
+- Reading entities( Sensor states/values, Location of user , etc...)
+
+- Fetching history values.
+
+- fetching weather
+
+- implementing zeroconf for autodetecting the local instance VERY LOW PRIO
+
+- prefered devices: 
+    * Volume up in the Living room
+    -> "Do you want to increase the volume for all Instances in the Living room?"
+    *1 Yes -> Increasing the volume for all devices
+    *2 No
+        -> "Which device should be increased"
+        *2 the radio
+        -> "Do you want to set this as your default?
+        *2.1 yes -> remember for future
+        *2.2 no -> don't ask again
+            --> Defaults
+- User specific synonyms
+
+How to handle Rooom and User restricted synonyms?????
+
+Mach die Schriebtischlampe an! Kann von Tom in jedem Zimmmer als die Schriebtischlampe gemeint sein und von Lisa als nur Ihre...
+
+Room -> User -> Synonym
+
+Wohnzimmer:
+    General:
+    Tom:
+    Petra:
+
+
+Possible directly accessible Items
