@@ -73,3 +73,6 @@ venv.bak/
 
 # mkdocs documentation
 /site
+
+# dev file with keys etc for testing
+dev_test.py
