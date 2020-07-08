@@ -11,7 +11,6 @@ STANDARDSERVICES = ["turn_on","turn_off","toggle","update_entity"]
 class HassHandler:
     def __init__(self):
         self.ws = HassWsClient(URL,token = TOKEN)
-        self.eh = HassEntityHandler(self.ws)
         #Task management is going to happen here in the future
         loop.run_until_complete(self.update_external_data())
 
