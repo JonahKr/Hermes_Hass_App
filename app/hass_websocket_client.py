@@ -1,8 +1,12 @@
 import asyncio
 import websockets
 import json
+
+import logging
+
 from typing import Union
 
+logger = logging.getLogger("Hermes_Hass_App")
 class ParameterError(Exception):
     pass
 
@@ -98,6 +102,57 @@ class hass_websocket_client:
         if response['type'] == 'auth_ok': print("Authentication Succesfull")
         if response['type'] == 'auth_invalid': print(response['message'])
     
+    """
+    !!! This stuff are the first test for using a recieving loop in combination with asyncio
+    Sending and recieving Data is being split and therefore needs aditional handeling.
+
+    __singular_queue = [] # [1,3,25]
+    __singular_response = {} # {1:response,2:response}
+    __retained_queue = {} # {2:callback, 2345:callback}
+    async def _run_Recv_Loop(self):
+        #THIS IS NOT RECOMMENDED AND NEEDS TESTING
+        while True:
+            #this is the pause while everything else runs...
+            response = json.loads(await self.websocket.recv())
+            id = response['id']
+            singular_flag = False
+            for index, item in enumerate(self.__singular_queue):
+                if id == item:
+                    del self.__singular_queue[index]
+                    self.__singular_response[id] = response
+                    singular_flag = True
+                    break
+            if singular_flag:
+                continue
+            for index, key, value in enumerate(self.__retained_queue):
+                if id == key:
+                    value()
+
+    async def _send_loop(self, type: str, disable_id = False, **kwargs):
+        payload_dict = {}
+        if not disable_id: payload_dict["id"] = self.__id_generator()
+        payload_dict["type"] = type
+        #For importing all extra arguments
+        for key, value in kwargs.items():
+            if value is not None: payload_dict[key] = value
+        payload_json = json.dumps(payload_dict)
+        try:
+            await self.websocket.send(payload_json)
+        except TypeError as e:
+            print('Unsupported Input: '+ str(e))
+        except:
+            print("An exception occurred")
+    
+    async def __await_singular(self, id: int):
+        while True:
+            response = self.__singular_response.pop(id, False)
+            if response is False:
+                await asyncio.sleep(1)
+                continue
+            else:#Its a hit
+                return response
+
+"""
     #I know i could override the websockets class method but this was easier
     async def ping(self) -> bool:
         """Ping Pong Websocket heartbeat
@@ -110,7 +165,7 @@ class hass_websocket_client:
         if response['type'] == 'pong':
             return True
         return False
-    
+
     async def __send(self, type: str, disable_id = False, **kwargs):
         """sends a message via Websocket using validation features provided by homeassistant
         Parameters
