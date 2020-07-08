@@ -15,7 +15,7 @@ class IdMissmatchError(Exception):
 
 #TODO Secure websocket client
 #TODO Version restrictions from HomeAssistant
-class hass_websocket_client:
+class HassWsClient:
     """
     A class used to handle interactions with a homeassistant instance using Websocket
     ...
