@@ -20,22 +20,17 @@ app = HermesApp("HassApp")
 
 hass = HassHandler()
 
-def extract_slot_value(intent: NluIntent, slot_name: str, default=None):
-    slot = next(filter(lambda slot: slot.slot_name == slot_name, intent.slots), None)
-    if slot and slot.value["kind"] is not "Unknown":
-        return slot.value.get("value", default)
-    return default
+services = loop.run_until_complete(hass.ws.fetch_services())
 
-@app.on_intent("hassapp.TurnOn")
+@app.on_intent(['hassapp.' + service for service in services])
 def hass_TurnOn(intent: NluIntent):
-    entity = extract_slot_value(intent, "entity")
-    #room = extract_slot_value(intent, "room")
-    #user = extract_slot_value(intent, "user")
-    if entity:
+    try:
         text = hass.handle_service_intent(intent) or None
+    except:
+        pass
     else:
         text = "Passing no Entity is not yet supported"
-    return EndSession(text if not entity else None)
+    return EndSession(text)
 
 """
 @app.on_prefix("hassapp.")
