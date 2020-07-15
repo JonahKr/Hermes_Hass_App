@@ -289,6 +289,24 @@ class HassWsClient:
         """
         response  = await self.__send("get_services")
         return self.__dict_return(response)
+
+    async def fetch_unique_services(self) -> list:
+        """This offers a easy way to get a list of all unique services
+        Returns
+        -------
+        list
+            list of services
+        """
+        tracer, services = await self.fetch_services()
+        unique_services = []
+        if tracer:
+            for domain in dict(services):
+                for service in services[domain]:
+                    if service not in unique_services:
+                        unique_services.append(service)
+            return unique_services
+        return []
+
     
     async def fetch_panels(self) -> (bool, list):
         """This will get a dump of the current registered panels in Home Assistant.
