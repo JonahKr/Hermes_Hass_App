@@ -14,7 +14,6 @@ class IdMissmatchError(Exception):
     pass
 
 #TODO Secure websocket client
-#TODO Version restrictions from HomeAssistant
 class HassWsClient:
     """
     A class used to handle interactions with a homeassistant instance using Websocket
@@ -72,7 +71,6 @@ class HassWsClient:
     
     async def connect(self, autoauth = True):
         """Connecting to the Homeassistant Instance
-        FIXME Exceptions from the websockets library aren't handled
         Parameters
         ----------
         autoauth : bool, optional
@@ -85,22 +83,26 @@ class HassWsClient:
         InvalidHandshake
             the websocket connection couldn't be established due to -> message
         """
-        self.websocket = await websockets.connect(self.url)
+        try:
+            self.websocket = await websockets.connect(self.url)
+        except websockets.InvalidURI:
+            logging.exception("WS:InvalidURL Exception occured")
+        except websockets.InvalidHandshake:
+            logging.exception("WS: Handshake Error occured")
         response = json.loads(await self.websocket.recv())
         if response['type'] != 'auth_ok' and autoauth:
             await self.authenticate()
 
     async def authenticate(self):
-        """Authenticating the client with the homeassistant instance
-        TODO Implement Logger instead of print    
+        """Authenticating the client with the homeassistant instance  
         """
         if self.token:
             response = await self.__send('auth', disable_id = True, access_token=self.token)
         else:
             #The Password Authentication is going to be disconinued in the near future
             response = await self.__send('auth', disable_id = True, api_password=self.password)
-        if response['type'] == 'auth_ok': print("Authentication Succesfull")
-        if response['type'] == 'auth_invalid': print(response['message'])
+        if response['type'] == 'auth_ok': logger.info("Authentication Succesfull")
+        if response['type'] == 'auth_invalid': logger.info(response['message'])
     
     """
     !!! This stuff are the first test for using a recieving loop in combination with asyncio
@@ -201,13 +203,12 @@ class HassWsClient:
             if disable_id or (response['id'] == payload_dict["id"] and response['type'] == 'result'):
                 return response
             else:
-                #TODO handle where ids don't match for whatever reason
-                #raise Exception("The returned Id ("+str(response['id'])+") from the API does not match the sended one"+str(payload_dict["id"])
-                print("i hate this")
+                logger.error("A message sync issue occured")
+
         except TypeError as e:
-            print('Unsupported Input: '+ str(e))
+            logger.exception('Unsupported Input: '+ str(e))
         except:
-            print("An exception occurred")
+            logger.exception("An exception occurred")
 
     def __list_return(self, response) -> (bool,list):
         """This generalizes the return Statement to (bool, list)
