@@ -1,7 +1,7 @@
 from hass_handler import HassHandler
 
 import logging
-
+ 
 import asyncio
 
 from rhasspyhermes.nlu import NluIntent
@@ -9,6 +9,7 @@ from rhasspyhermes_app import EndSession, HermesApp
 
 #Some Logging Stuff
 logger = logging.getLogger("Hermes_Hass_App")
+logger.setLevel(logging.DEBUG)
 log_stream = logging.StreamHandler()
 log_stream.setLevel(logging.WARNING)
 logger_format = logging.Formatter('%(filename)s,%(lineno)s - %(levelname)s - %(message)s')
@@ -18,22 +19,23 @@ logger.addHandler(log_stream)
 loop = asyncio.get_event_loop()
 app = HermesApp("HassApp")
 
-hass = HassHandler()
+hass = HassHandler(loop)
 
 services = loop.run_until_complete(hass.ws.fetch_services())
-
-@app.on_intent(['hassapp.' + service for service in services])
-def hass_TurnOn(intent: NluIntent):
+#['hassapp.' + str(service) for service in services]
+@app.on_intent('hassapp.turn_on')
+async def hass_Intent(intent: NluIntent):
+    logger.debug("INTENT is there")
+    text = ""
     try:
-        text = hass.handle_service_intent(intent) or None
+        logger.debug("passing on")
+        #asyncio.create_task(hass.handle_service_intent(intent))
+        loop.run_until_complete(hass.ws.fetch_entity_registry())
+
     except:
         pass
     else:
         text = "Passing no Entity is not yet supported"
     return EndSession(text)
 
-"""
-@app.on_prefix("hassapp.")
-def hass_Intent(intent: NluIntent):
-    return EndSession(hass.handle_intent(intent))
-"""
+app.run()

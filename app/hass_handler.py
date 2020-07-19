@@ -2,12 +2,12 @@ from hass_websocket_client import HassWsClient
 
 from rhasspyhermes.nlu import NluIntent
 from typing import Optional
-import asyncio
+import logging
 
-loop = asyncio.get_event_loop()
+logger = logging.getLogger("Hermes_Hass_App")
 
-URL = "ws://localhost:8123/api/websocket"
-TOKEN = "exampletoken123456789"
+URL = ''
+TOKEN = ''
 STANDARDSERVICES = ["turn_on","turn_off","toggle","update_entity"]
 
 def extract_slot_value(slots: list, slot_name: str, default=None):
@@ -17,33 +17,50 @@ def extract_slot_value(slots: list, slot_name: str, default=None):
     return default
 
 class HassHandler:
-    def __init__(self):
+    def __init__(self, loop = None):
+        self.loop = loop
         self.ws = HassWsClient(URL,token = TOKEN)
+        loop.run_until_complete(self.ws.connect())
         #{'serviceX':{'domains'=['domain1','domain2'], 'required_fields':['slot1', 'slot2']}}
         self.local_services = {}
         #Task management is going to happen here in the future
         loop.run_until_complete(self.update_local_data())
+        logger.debug("Init Completed")
+        logger.debug("domains: \n"+str(self.domains))
 
     async def handle_service_intent(self, intent):
+        logger.debug("Handler Started")
         # one/two of entity, room, user must be passed to
         slots: dict = intent.slots
-        entity_flag, entity_id, domain = self.inspect_entity(slots.get('entity',None),room=slots.get('room',None),user=slots.get('user',None))
+        logger.debug("Inspecting Entity")        
+        entity_flag, entity_id, domain = self.inspect_entity(extract_slot_value(slots,"entity",None),room=extract_slot_value(slots,"room",None),user=extract_slot_value(slots,"user",None))
+        logger.debug("Entityflag:"+str(entity_flag)+"; entity_id:"+entity_id+"; domain:"+domain)
         #TODO find out where to find intent name
-        service = intent.intentName
+        service = getattr(intent.intent,"intent_name")
+        logger.debug("Name: "+str(service))
         try:
+            logger.debug("Approving Service")
             service_flag, nescessary_fields = self._approve_service(service, domain)
+            logger.debug(str(nescessary_fields))
         except:
             service_flag = False
         
-        if entity_flag and service_flag:
+        if entity_flag:
+            logger.debug("Last Steps")
             service_data = {}
+            """
             for field in nescessary_fields:
                 try:
+                    logger.debug("Matching")
                     service_data[str(field)] = slots[str(field)]
                 except:
                     #TODO specify this for multiple missing fields
+                    logger.debug("Last Except")
                     return "Some essential Information is missing."
+            """
+            logger.debug("Calling service")
             tracer = await self.ws.call_service(domain, service, service_data = service_data)
+            logger.debug("tracer:"+str(tracer))
             if tracer:
                 pass#All Successfull
             else:
@@ -74,9 +91,11 @@ class HassHandler:
         # 2.2 - Use domain: $ALL synonyms
 
         #Option 1: Valid Entity_id is passed directly
+        logger.debug("The inspected entity is: "+entity)
         try:
             domain = entity.split(".")[0]
             if domain in self.domains and entity in self.entity_ids:
+                logger.debug("Returning: "+ str((True, entity, domain)))
                 return (True, entity, domain)
         except:
             pass
