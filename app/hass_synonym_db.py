@@ -36,10 +36,7 @@ class hass_synonym_db:
         self.db.update({'name': new_zone_name}, self.zone_query.name == zone_name)
     
     def is_zone(self,zone_name: str) -> bool:
-        if(d)
+        pass
     
     def new_synonym(self, entity_id: str, synonym: str, zone: str = '$ALL', user: str = '$ALL'):
         self.db.insert()
-
-
-test1 = hass_synonym_db()
